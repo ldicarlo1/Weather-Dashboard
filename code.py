@@ -142,23 +142,7 @@ class Weather_Model():
 
         plt.show()
         
-    def plot_cape(self):
-        df = self.df
-        temp = df['Temperature']
-        hel = df['Helicity']
-        CAPE = df['CAPE']
-        dewpt = df['Dew Point']
-        time = df['time']
 
-        name = Nominatim().reverse("{},{}".format(self.lat,self.lon))     #generate a location
-        name= (str(name)).split(',')        #split the name of the location in order to avoid an unecessarily long address
-        name = name[-5:]                     #return the city, county, zip, and country
-        name=','.join(name)
-        duration = self.end - self.start
-
-        plt.style.use('seaborn')
-        ax1 = plt.subplot2grid((6,1),(0,0), rowspan=4,sharex=ax2)
-        plt.title('{} hour CAPE, Helicity, and  Forecast for {}'.format(duration,name))    #describe the location, start and end time
 
 
 def main():
