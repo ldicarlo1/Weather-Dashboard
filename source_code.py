@@ -26,7 +26,7 @@ class Weather_Model():
         self.connect()
         self.query_point()
         self.processing()
-        self.plot()
+        self.plot_convection()
 
     #Connects to the UCAR UNIDATA Server
     def connect(self):
@@ -60,7 +60,7 @@ class Weather_Model():
         #pull temperature, cloud cover, and precip data
         query.variables('Temperature_surface','Total_cloud_cover_entire_atmosphere_Mixed_intervals_Average',
         'Total_precipitation_surface_Mixed_intervals_Accumulation','Dewpoint_temperature_height_above_ground','Convective_available_potential_energy_surface'
-        ,'Storm_relative_helicity_height_above_ground_layer')
+        ,'Storm_relative_helicity_height_above_ground_layer','Convective_inhibition_surface','u-component_of_wind_isobaric','v-component_of_wind_isobaric')
         self.data = ncss.get_data(query)
 
         return self.data
@@ -84,14 +84,26 @@ class Weather_Model():
 
         CAPE = data.variables['Convective_available_potential_energy_surface'][:].squeeze()
         hel = data.variables['Storm_relative_helicity_height_above_ground_layer'][:].squeeze()
-
+        CIN = data.variables['Convective_inhibition_surface'][:].squeeze()
+        u_wind = data.variables['u-component_of_wind_isobaric'][:].squeeze()
+        v_wind = data.variables['v-component_of_wind_isobaric'][:].squeeze()
+     
+        u_500 = u_wind[:,18]
+        v_500 = v_wind[:,18]
+        u_sfc = u_wind[:,30]
+        v_sfc = v_wind[:,30]       
+        wind_500 = np.sqrt((u_500 * u_500) + (v_500 * v_500)) 
+        wind_sfc = np.sqrt(((u_sfc * u_sfc) + (v_sfc * v_sfc)))
+        shear = (wind_500 - wind_sfc) * 1.94384     #convert from m/s to knots
+        print(wind_500)
+        print(wind_sfc)
 
         time_var = data.variables['time']
         time = num2date(time_var[:].squeeze(),time_var.units)
 
         self.df = pd.DataFrame({
             'Temperature': temp,'Dew Point': dewpt, 'Cloud Cover': cloud_cover, 'Precipitation': precip, 'time':time, 'CAPE':CAPE,
-            'Helicity':hel
+            'Helicity':hel, 'Shear':shear, 'CIN':CIN
         }, index = time)
         
         return self.df
@@ -142,8 +154,58 @@ class Weather_Model():
 
         plt.show()
         
+    def plot_convection(self):
+        df = self.df
+        temp = df['Temperature']
+        CAPE = df['CAPE']
+        precip = df['Precipitation']
+        dewpt = df['Dew Point']
+        time = df['time']
+        CIN = df['CIN']
+        shear = df['Shear']
+
+        name = Nominatim().reverse("{},{}".format(self.lat,self.lon))     #generate a location
+        name= (str(name)).split(',')        #split the name of the location in order to avoid an unecessarily long address
+        name = name[-5:]                     #return the city, county, zip, and country
+        name=','.join(name)
+        duration = self.end - self.start
+
+        plt.style.use('seaborn')
 
 
+        ax2 = plt.subplot2grid((6,1),(0,0), rowspan=2)
+        plt.ylabel('J/Kg')
+        plt.title('{} hour Convective Forecast for {}'.format(duration,name))    #describe the location, start and end time
+
+        ax2.axes.get_xaxis().set_visible(False)
+
+        ax1 = plt.subplot2grid((6,1),(2,0), rowspan=2,sharex=ax2)
+        plt.ylabel('Temperature (F)')
+        ax1.axes.get_xaxis().set_visible(False)
+
+
+        ax3 = plt.subplot2grid((6,1),(4,0), rowspan=2 ,sharex=ax2)
+        #ax3.fill_between(time,0,clouds,color='lightgrey')
+        plt.xlabel('Date')
+        plt.ylabel('Speed Shear 0-6km (knots)')
+
+        ax1.plot(time,temp, color='red', label='Temperature')
+        ax1.plot(time,dewpt,'--', color = 'blue', label='Dew Point')
+        ax1.legend(loc='upper left')
+
+        ax2.plot(time,CAPE,color='green', label='CAPE')
+        ax2.plot(time,CIN,color='red',label='CIN')  
+        #ax2.fill_between(time,0,CAPE,color='tomato')
+        #ax2.fill_between(time,0,CIN,color='lightgreen')
+
+        ax2.legend(loc='upper left')
+
+        ax3.plot(time,shear, color='grey',label='Speed Shear 0-6km')
+        ax3.fill_between(time,0,shear,color='lightgrey')
+        plt.xlabel('Date')
+        ax3.legend(loc='upper left')
+
+        plt.show()
 
 def main():
 
@@ -173,4 +235,3 @@ if __name__ == "__main__":
 
 
     
-
