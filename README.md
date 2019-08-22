@@ -6,3 +6,5 @@ When this program is initially run, it will as for a geographic point location, 
 ![](images/git.png)
 
 Here is an example of the convective weather graph.
+
+![](images/conv.png)
