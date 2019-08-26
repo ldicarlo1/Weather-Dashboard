@@ -90,9 +90,9 @@ class Weather_Model():
         CIN = data.variables['Convective_inhibition_surface'][:].squeeze()
         u_wind = data.variables['u-component_of_wind_isobaric'][:].squeeze()
         v_wind = data.variables['v-component_of_wind_isobaric'][:].squeeze()
-        try:
+        try:                                                         # distinguish between data from HRRR or GFS
             u_500 = u_wind[:,18]
-            v_500 = v_wind[:,18]
+            v_500 = v_wind[:,18]        
             u_sfc = u_wind[:,30]
             v_sfc = v_wind[:,30] 
         except Exception:
@@ -107,8 +107,9 @@ class Weather_Model():
        
 
         time_var = data.variables['time']
-        time = num2date(time_var[:].squeeze(),time_var.units)
+        time = num2date(time_var[:].squeeze(),time_var.units)   #convert time to date values
 
+        #create dataframe with all values
         df = pd.DataFrame({
             'Temperature': temp,'Dew Point': dewpt, 'Cloud Cover': cloud_cover, 'Precipitation': precip, 'time':time, 'CAPE':CAPE,
             'Shear':shear, 'CIN':CIN
@@ -225,14 +226,23 @@ class GFS(Weather_Model):
             
         except ValueError:
             print('Please enter a number')
+
+        plot = input('Choose which type of graph (Convective or Temp) --->   ')
         lat = name.latitude
         lon = name.longitude
         model_name = 'GFS Quarter Degree Forecast'
         variables = ('Temperature_surface','Total_cloud_cover_entire_atmosphere_Mixed_intervals_Average',
         'Total_precipitation_surface_Mixed_intervals_Accumulation','Dewpoint_temperature_height_above_ground','Convective_available_potential_energy_surface'
         ,'Storm_relative_helicity_height_above_ground_layer','Convective_inhibition_surface','u-component_of_wind_isobaric','v-component_of_wind_isobaric')
-        super().__init__(model_name,start,end,lat,lon,variables)
-        self.plot()
+
+        super().__init__(model_name,start,end,lat,lon,variables)    #take init values and run as init values for Weather_Model class
+        if plot == 'Convective' or plot=='convective' or plot =='conv' or plot == 'Conv':
+            self.plot_convection()
+        elif plot == 'Temp' or plot=='Temperature' or plot =='temp' or plot=='temperature':
+            self.plot()
+        else:
+            print('Please specify which graph you would like to display')
+
 
 class HRRR(Weather_Model):
     def __init__(self):
@@ -247,17 +257,37 @@ class HRRR(Weather_Model):
             
         except ValueError:
             print('Please enter a number')
+
+        plot = input('Choose which type of graph (Convective or Temp) --->  ')
         lat = name.latitude
         lon = name.longitude
         model_name = 'NCEP HRRR CONUS 2.5km'
         variables= ('Total_precipitation_surface_1_Hour_Accumulation','Total_cloud_cover_entire_atmosphere','Temperature_height_above_ground',
         'Dewpoint_temperature_height_above_ground','Convective_available_potential_energy_surface','Storm_relative_helicity_height_above_ground_layer',
         'Convective_inhibition_surface','u-component_of_wind_isobaric','v-component_of_wind_isobaric')
+
         super().__init__(model_name,start,end,lat,lon,variables)
-        self.plot()
-        
+
+        if plot == 'Convective' or plot=='convective' or plot =='conv' or plot == 'Conv':
+            self.plot_convection()
+        elif plot == 'Temp' or plot=='Temperature' or plot =='temp' or plot=='temperature':
+            self.plot()
+        else:
+            print('Please specify which graph you would like to display')
+
 if __name__ == "__main__":
-    GFS()
+    select = str(input('Which model would you like to use (HRRR or GFS) ? --->  '))
+
+    if select == 'GFS' or select =='gfs':
+        GFS()
+    elif select == 'HRRR' or select== 'hrrr':
+        HRRR()
+    else:
+        print('Input Error: Please enter a listed model')
+
+
+    
+
 
 
     
