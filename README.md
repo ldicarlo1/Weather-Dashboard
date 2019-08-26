@@ -39,7 +39,15 @@ To install matplotlib:
 
 # Examples
 --------------
+To run this program, make sure you are in the directory containing weathermodeler.py, and then enter this into the command window:
 
+        $ python3 weathermodeler.py
+        
+The program will immediately ask for inputs regarding which model, location, time, and which type of graph to display.
+
+
+
+This is an example of a temperature graph.
 
 ![](images/git.png)
 
